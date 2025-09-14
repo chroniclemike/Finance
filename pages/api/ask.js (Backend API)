@@ -1,0 +1,55 @@
+import OpenAI from "openai";
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const { csvData, question } = req.body;
+    if (!csvData || !question) {
+      res.status(400).json({ error: "csvData and question required" });
+      return;
+    }
+
+    // Flatten CSV into text
+    const rows = Array.isArray(csvData) ? csvData.slice(0, 100) : [];
+    const header = Object.keys(rows[0] || {}).join(", ");
+    const lines = rows.map((r) =>
+      Object.values(r)
+        .map((v) => (v === null || v === undefined ? "" : String(v)))
+        .join(", ")
+    );
+    const tableText = [header, ...lines].join("\n");
+
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "user",
+          content: `
+You are a finance assistant.
+Trial Balance data:
+${tableText}
+
+Question:
+${question}
+
+Answer concisely like a finance manager.
+`,
+        },
+      ],
+      max_tokens: 600,
+      temperature: 0.1,
+    });
+
+    const answer = completion.choices[0].message.content.trim();
+    res.status(200).json({ answer });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error", detail: err.message });
+  }
+}
