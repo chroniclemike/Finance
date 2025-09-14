@@ -1,0 +1,12 @@
+finance-llm-demo/
+├─ package.json
+├─ next.config.js
+├─ pages/
+│  ├─ index.js        <-- React frontend
+│  └─ api/
+│     └─ ask.js       <-- Backend API (LLM call)
+├─ public/
+│  └─ favicon.ico
+├─ styles/
+│  └─ globals.css
+└─ README.md
